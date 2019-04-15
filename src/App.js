@@ -19,6 +19,10 @@ const requestUrlJson = (url) =>
       .catch(reject);
   });
 
+// [Violation] Only request geolocation information in response to a user gesture.
+// Avoids Requesting The Geolocation Permission On Page Load:
+// https://developers.google.com/web/tools/lighthouse/audits/geolocation-on-load
+
 const requestCurrentUserPosition = () => 
   new Promise((resolve, reject) => {  // wrapper
     if ("geolocation" in navigator) {
@@ -41,6 +45,7 @@ const requestCurrentUserPosition = () =>
     }
   });
 
+// https://www.robinwieruch.de/react-hooks-fetch-data/
 const App = () => {
   console.log(navigator.userAgent, navigator.vendor);
 
@@ -63,7 +68,7 @@ const App = () => {
   }, []); // []: only after the initial render
 
   const [pos,       setPos]     = useState(null);
-  useEffect(() => {
+  const requestGeo = () => {
     const promisePos = requestCurrentUserPosition();
     promisePos.then(
       pos => {
@@ -72,7 +77,7 @@ const App = () => {
       },
       err => console.error('An error has occurred while retrieving location', err)
     );
-  }, []);
+  }
   
   if (!data)     return <p>Please wait ...</p>;
   if (error)     return <p>{error.message}</p>;
@@ -85,7 +90,8 @@ const App = () => {
       <li>Latitude, Longitude:{data.lat},{data.lon}</li>
       <li>IP:{data.query}</li>
       <li>Geolocation Position: {pos ?
-          `${pos.coords.latitude},${pos.coords.longitude},${pos.coords.accuracy}` : '🕛'}</li>
+          `${pos.coords.latitude},${pos.coords.longitude},${pos.coords.accuracy}` :
+          <button onClick={() => requestGeo()}>Request Geolocation</button>}</li>
     </div>
   );
 }

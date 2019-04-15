@@ -1,5 +1,5 @@
 // WhereAmI
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // console.log = function(){}  // on production, disable console.log
@@ -41,58 +41,53 @@ const requestCurrentUserPosition = () =>
     }
   });
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      pos:  null,
-      data: null,
-      isLoading: true
-    };
-  }
+const App = () => {
+  console.log(navigator.userAgent, navigator.vendor);
 
-  componentDidMount() {
-    console.log(navigator.userAgent, navigator.vendor);
-    this.setState({ isLoading: true });
-    
+  const [isLoading, setLoading] = useState(true);
+  const [data,      setData]    = useState(null);
+  const [error,     setError]   = useState(null);
+  useEffect(() => {
     const promiseIp  = requestUrlJson(urlIpLookUp);
-    const promisePos = requestCurrentUserPosition();
-
     promiseIp.then(
       data => {
-        this.setState({ data, isLoading: false });
+        setData(data);
+        setLoading(false);
         console.log(JSON.stringify(data));
       },
-      error => this.setState({ error, isLoading: false })
+      error => {
+        setError(error);
+        setLoading(false);
+      }
     );
+  }, []); // []: only after the initial render
 
+  const [pos,       setPos]     = useState(null);
+  useEffect(() => {
+    const promisePos = requestCurrentUserPosition();
     promisePos.then(
       pos => {
-        this.setState({ pos })
+        setPos(pos);
         console.log(pos.coords.latitude, pos.coords.longitude);
       },
       err => console.error('An error has occurred while retrieving location', err)
     );
-  }
+  }, []);
+  
+  if (!data)     return <p>Please wait ...</p>;
+  if (error)     return <p>{error.message}</p>;
+  if (isLoading) return <p>Loading ...</p>;
 
-  render() {
-    const { pos, data, isLoading, error } = this.state;
-
-    if (!data)     return <p>Please wait ...</p>;
-    if (error)     return <p>{error.message}</p>;
-    if (isLoading) return <p>Loading ...</p>;
-
-    return (
-      <div className="App">
-        <li>Location:{data.regionName}</li>
-        <li>Country:{data.country}</li>
-        <li>Latitude, Longitude:{data.lat},{data.lon}</li>
-        <li>IP:{data.query}</li>
-        <li>Geolocation Position: {pos ?
-            `${pos.coords.latitude},${pos.coords.longitude},${pos.coords.accuracy}` : '🕛'}</li>
-      </div>
-    );
-  }
+  return (
+    <div className="App">
+      <li>Location:{data.regionName}</li>
+      <li>Country:{data.country}</li>
+      <li>Latitude, Longitude:{data.lat},{data.lon}</li>
+      <li>IP:{data.query}</li>
+      <li>Geolocation Position: {pos ?
+          `${pos.coords.latitude},${pos.coords.longitude},${pos.coords.accuracy}` : '🕛'}</li>
+    </div>
+  );
 }
 
 export default App;
